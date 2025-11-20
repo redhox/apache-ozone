@@ -1,0 +1,63 @@
+services:
+  scm:
+    image: apache/ozone:2.0.0
+    command: ["ozone", "scm"]
+    environment:
+      OZONE-SITE.XML_ozone.metadata.dirs: "/data/metadata"
+      ENSURE_SCM_INITIALIZED: /data/metadata/scm/current/VERSION
+    ports:
+      - "9876:9876"
+    volumes:
+      - ./scm:/data/metadata
+
+  om:
+    image: apache/ozone:2.0.0
+    command: ["ozone", "om"]
+    environment:
+      OZONE-SITE.XML_ozone.metadata.dirs: "/data/metadata"
+      ENSURE_OM_INITIALIZED: /data/metadata/om/current/VERSION
+      WAITFOR: scm:9876
+    ports:
+      - "9874:9874"
+    volumes:
+      - ./om:/data/metadata
+
+  datanode:
+    image: apache/ozone:2.0.0
+    command: ["ozone", "datanode"]
+    environment:
+      OZONE-SITE.XML_hdds.datanode.dir: "/data/hdds"
+      OZONE-SITE.XML_ozone.scm.names: "scm"
+    volumes:
+      - ./datanode/data:/data/hdds
+      - ./datanode/metadata:/data/metadata
+
+  recon:
+    image: apache/ozone:2.0.0
+    command: ["ozone", "recon"]
+    environment:
+      OZONE-SITE.XML_ozone.metadata.dirs: "/data/metadata"
+      OZONE-SITE.XML_ozone.recon.db.dir: "/data/recon"
+    ports:
+      - "9888:9888"
+    volumes:
+      - ./recon/metadata:/data/metadata
+      - ./recon/db:/data/recon
+
+  s3g:
+    image: apache/ozone:2.0.0
+    command: ["ozone", "s3g"]
+    environment:
+      OZONE-SITE.XML_ozone.metadata.dirs: "/data/metadata"
+    ports:
+      - "9878:9878"
+    volumes:
+      - ./s3g:/data/metadata
+
+  httpfs:
+    image: apache/ozone:2.0.0
+    command: ["ozone", "httpfs"]
+    environment:
+      CORE-SITE.XML_fs.defaultFS: "ofs://om"
+    ports:
+      - "14000:14000"
